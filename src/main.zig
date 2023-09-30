@@ -1,11 +1,13 @@
+const std = @import("std");
 const raylib = @import("raylib");
+
 const enums = @import("enums.zig");
 const constants = @import("constants.zig");
 const Zetromino = @import("zetromino.zig");
 
 pub fn main() void {
     raylib.SetConfigFlags(raylib.ConfigFlags{ .FLAG_WINDOW_RESIZABLE = true });
-    raylib.InitWindow(constants.ROWS * constants.CELL_SIZE, constants.COLS * constants.CELL_SIZE, "Zetris");
+    raylib.InitWindow(constants.COLS * constants.CELL_SIZE, constants.ROWS * constants.CELL_SIZE, "Zetris");
     raylib.SetTargetFPS(60);
 
     defer raylib.CloseWindow();
@@ -14,20 +16,16 @@ pub fn main() void {
     var delay_ms: f32 = 500.0;
 
     var z_tromino = Zetromino{ .x = 4, .y = 0, .block_shape = .S };
-    z_tromino.init(42);
+    z_tromino.init(44);
+    z_tromino.spawn();
 
-    var map: [constants.COLS][constants.ROWS]u8 = undefined;
+    var map: [constants.ROWS][constants.COLS]u8 = undefined;
 
-    for (0..constants.COLS) |i| {
+    for (0..constants.ROWS) |i| {
         for (0..constants.COLS) |j| {
             map[i][j] = 0;
         }
     }
-
-    map[13][1] = 1;
-    map[14][1] = 1;
-    map[14][2] = 1;
-    map[14][3] = 1;
 
     while (!raylib.WindowShouldClose()) {
         raylib.BeginDrawing();
@@ -40,21 +38,21 @@ pub fn main() void {
             z_tromino.update(&map);
 
             timer = 0.0;
-            delay_ms *= 0.99;
+            // delay_ms *= 0.99;
         }
 
-        if (raylib.IsKeyDown(raylib.KeyboardKey.KEY_UP)) z_tromino.rotation = (z_tromino.rotation + 1) % 4;
+        if (raylib.IsKeyReleased(raylib.KeyboardKey.KEY_UP)) z_tromino.rotation = (z_tromino.rotation + 1) % 4;
 
-        if (raylib.IsKeyDown(raylib.KeyboardKey.KEY_RIGHT)) z_tromino.move(1, 0, &map);
-        if (raylib.IsKeyDown(raylib.KeyboardKey.KEY_LEFT)) z_tromino.move(-1, 0, &map);
-        if (raylib.IsKeyDown(raylib.KeyboardKey.KEY_DOWN)) z_tromino.move(0, 1, &map);
+        if (raylib.IsKeyReleased(raylib.KeyboardKey.KEY_RIGHT)) z_tromino.move(1, 0, &map);
+        if (raylib.IsKeyReleased(raylib.KeyboardKey.KEY_LEFT)) z_tromino.move(-1, 0, &map);
+        if (raylib.IsKeyDown(raylib.KeyboardKey.KEY_DOWN)) timer += 100.0;
 
-        if (raylib.IsKeyDown(raylib.KeyboardKey.KEY_SPACE)) z_tromino.drop(&map);
+        if (raylib.IsKeyReleased(raylib.KeyboardKey.KEY_SPACE)) z_tromino.drop(&map);
 
         raylib.ClearBackground(raylib.BLACK);
 
-        for (0..constants.COLS) |i| {
-            for (0..constants.ROWS) |j| {
+        for (0..constants.ROWS) |i| {
+            for (0..constants.COLS) |j| {
                 var i32_i: i32 = @intCast(i);
                 var i32_j: i32 = @intCast(j);
 

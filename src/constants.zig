@@ -1,5 +1,5 @@
 pub const ROWS: i32 = 15;
-pub const COLS: i32 = 15;
+pub const COLS: i32 = 10;
 
 pub const SHAPE_WIDTH: i32 = 4;
 pub const SHAPE_HEIGHT: i32 = 2;

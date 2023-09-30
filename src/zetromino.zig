@@ -31,7 +31,7 @@ pub fn render(self: *Self) void {
     }
 }
 
-pub fn update(self: *Self, map: *[constants.COLS][constants.ROWS]u8) void {
+pub fn update(self: *Self, map: *[constants.ROWS][constants.COLS]u8) void {
     self.*.y += 1;
 
     if (self.checkCollisions(map) == true) {
@@ -40,7 +40,7 @@ pub fn update(self: *Self, map: *[constants.COLS][constants.ROWS]u8) void {
     }
 }
 
-pub fn move(self: *Self, x: i32, y: i32, map: *[constants.COLS][constants.ROWS]u8) void {
+pub fn move(self: *Self, x: i32, y: i32, map: *[constants.ROWS][constants.COLS]u8) void {
     var shape_id = @intFromEnum(self.block_shape);
     var dimensions = constants.SHAPES_DIMENSIONS[shape_id - 1];
     var inverted = self.rotation % 2 == 1;
@@ -48,8 +48,8 @@ pub fn move(self: *Self, x: i32, y: i32, map: *[constants.COLS][constants.ROWS]u
     var width = if (inverted) dimensions[1] else dimensions[0];
     var height = if (inverted) dimensions[0] else dimensions[1];
 
-    self.*.x = @max(@min(self.x + x, constants.ROWS - width), 0);
-    self.*.y = @max(@min(self.y + y, constants.COLS - height), 0);
+    self.*.x = @max(@min(self.x + x, constants.COLS - width), 0);
+    self.*.y = @max(@min(self.y + y, constants.ROWS - height), 0);
 
     if (self.checkCollisions(map)) {
         self.*.x -= x;
@@ -57,13 +57,13 @@ pub fn move(self: *Self, x: i32, y: i32, map: *[constants.COLS][constants.ROWS]u
     }
 }
 
-pub fn drop(self: *Self, map: *[constants.COLS][constants.ROWS]u8) void {
+pub fn drop(self: *Self, map: *[constants.ROWS][constants.COLS]u8) void {
     while (!self.checkCollisions(map)) : (self.*.y += 1) {}
     self.*.y -= 1;
     self.apply(map);
 }
 
-pub fn checkCollisions(self: *Self, map: *[constants.COLS][constants.ROWS]u8) bool {
+pub fn checkCollisions(self: *Self, map: *[constants.ROWS][constants.COLS]u8) bool {
     var shape_index = @intFromEnum(self.block_shape) - 1;
     var shape = constants.SHAPES_DATA[shape_index];
 
@@ -75,7 +75,7 @@ pub fn checkCollisions(self: *Self, map: *[constants.COLS][constants.ROWS]u8) bo
             var x = if (self.rotation % 2 == 1) usize_y + i else usize_x + j;
             var y = if (self.rotation % 2 == 1) usize_x + j else usize_y + i;
 
-            if (shape[i][j] == 1 and ((x >= constants.ROWS or y >= constants.COLS) or (map[y][x] > 0))) {
+            if (shape[i][j] == 1 and ((x >= constants.COLS or y >= constants.ROWS) or (map[y][x] > 0))) {
                 return true;
             }
         }
@@ -84,7 +84,7 @@ pub fn checkCollisions(self: *Self, map: *[constants.COLS][constants.ROWS]u8) bo
     return false;
 }
 
-pub fn apply(self: *Self, map: *[constants.COLS][constants.ROWS]u8) void {
+pub fn apply(self: *Self, map: *[constants.ROWS][constants.COLS]u8) void {
     var shape_index = @intFromEnum(self.block_shape);
     var shape = constants.SHAPES_DATA[shape_index - 1];
 
@@ -99,7 +99,43 @@ pub fn apply(self: *Self, map: *[constants.COLS][constants.ROWS]u8) void {
         }
     }
 
+    self.checkLines(map);
     self.spawn();
+}
+
+pub fn checkLines(self: *Self, map: *[constants.ROWS][constants.COLS]u8) void {
+    _ = self;
+    for (0..constants.ROWS) |i| {
+        var is_full = true;
+        for (0..constants.COLS) |j| {
+            if (map[i][j] == 0) {
+                is_full = false;
+                break;
+            }
+        }
+        if (is_full) {
+            removeLine(i, map);
+        }
+    }
+}
+
+pub fn removeLine(row: usize, map: *[constants.ROWS][constants.COLS]u8) void {
+    for (0..constants.COLS) |i| {
+        map[row][i] = 0;
+    }
+
+    std.debug.print("row: {d}\n", .{row});
+
+    if (row == 0)
+        return;
+
+    var i = row;
+    while (i > 0) {
+        for (0..constants.COLS) |j| {
+            map[i][j] = map[i - 1][j];
+        }
+        i -= 1;
+    }
 }
 
 pub fn spawn(self: *Self) void {
